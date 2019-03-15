@@ -1,0 +1,10 @@
+{
+    "type": "Feature",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [24.303256421599208, 120.6549316581746]
+    },
+    "properties": {
+      "name": "DJI_0252"
+    }
+}
