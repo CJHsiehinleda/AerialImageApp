@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 5px;
+        left: 25%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: none;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 5px;
+        padding-left: 5px;
+
+      }
+      #floating-panel {
+        background-color:transparent;
+        border: none;
+        left: 25%;
+        padding: 5px;
+        position: absolute;
+        top: 10px;
+        z-index: 5;
+        opacity: 1
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="floating-panel">
+        <button onclick="initMap()">初始設定</button>
+        <button onclick="toggleMarkerMap()">標記圖</button>
+        <button onclick="toggleHeatMap()">熱點圖</button>
+    </div>
+    <script>
+      var map;
+      var PolygonSet;
+      var PolygonPath=[];
+        function initMap() {
+          var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 22,
+          center: {lat: 24.303017, lng: 120.654451},
+          mapTypeId: 'satellite'
+          });
+          if (PolygonPath.length<1){  
+            PolygonPath = [
+                {lat: 24.302681365146825, lng: 120.65389609010715},
+                {lat: 24.303371899000002, lng: 120.65489513019841},
+                {lat: 24.303295678595237, lng: 120.6549606509762},
+                {lat: 24.302643889460317, lng: 120.65392755258334}
+            ];
+          }
+
+            // Construct the polygon.
+            PolygonSet = new google.maps.Polygon({
+              paths: PolygonPath,
+              editable: true,
+              draggable: true,
+              strokeColor: '#0080ff',
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: '#0080ff',
+              fillOpacity: 0.20
+            });
+            
+            //Manual polygon
+            // Add an event listener on the rectangle.
+            //PolygonSet.addListener('click', showNewPolygon);
+            google.maps.event.addListener(PolygonSet, 'click', function (event) {
+              var vertices = this.getPath();
+              for (var i =0; i < vertices.getLength(); i++) {
+                var xy = vertices.getAt(i);
+                PolygonPath[i]={lat: xy.lat(), lng: xy.lng()};
+              }
+            }); 
+            PolygonSet.setMap(map);
+
+        }
+
+        function showNewPolygon(event) {
+          var vertices = this.getPath();
+          for (var i =0; i < vertices.getLength(); i++) {
+            var xy = vertices.getAt(i);
+            PolygonPath[i]={lat: xy.lat(), lng: xy.lng()};
+          }
+          PolygonSet = new google.maps.Polygon({
+              paths: PolygonPath,
+              editable: true,
+              draggable: true,
+              strokeColor: '#0080ff',
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: '#0080ff',
+              fillOpacity: 0.20
+            });
+        
+        }  
+        // Loop through the results array and place a marker for each
+        // set of coordinates.
+ 
+        function toggleMarkerMap() {
+            // Create a <script> tag and set the USGS URL as the source.
+            var script = document.createElement('script');
+            script.src = '/GeoJSON/MarkerSpot.js';
+            document.getElementsByTagName('head')[0].appendChild(script);
+        }
+        var marker=[]
+        // Loop through the results array and place a marker for each
+        // set of coordinates.
+        window.markerspot_callback = function(results) {
+            //Initialize map
+            //get central coordinate
+            centercoords = results.features[0].geometry.coordinates;
+            var centerCoord = new google.maps.LatLng(centercoords[1], centercoords[0]);
+            var mapOptions = {
+                center: centerCoord, 
+                zoom: 22,
+                mapTypeId: 'satellite'
+            };
+            var mapCanvas = document.getElementById("map");
+            var map =new google.maps.Map(mapCanvas, mapOptions);
+            for (var i = 1; i < results.features.length; i++) {
+                var coords = results.features[i].geometry.coordinates;
+                var latLng = new google.maps.LatLng(coords[1],coords[0]);
+                var titlecaption="特徵數目: "+results.features[i].properties.count.toString()+"\n"+"GPS座標\n"+"緯度 "+coords[1].toString()+"\n"+"經度 "+coords[0].toString()
+                var marker = new google.maps.Marker({
+                    title: titlecaption,
+                    position: latLng,
+                    animation: google.maps.Animation.DROP,
+                    map: map
+                });
+            }
+            marker.setMap(map);
+            //set Polygon
+            if (PolygonPath.length<1){
+              PolygonPath = [
+                  {lat: 24.302681365146825, lng: 120.65389609010715},
+                  {lat: 24.303371899000002, lng: 120.65489513019841},
+                  {lat: 24.303295678595237, lng: 120.6549606509762},
+                  {lat: 24.302643889460317, lng: 120.65392755258334}
+              ];
+            }
+            // Construct the polygon.
+            var PolygonSet = new google.maps.Polygon({
+              paths: PolygonPath,
+              strokeColor: '#0080ff',
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: '#0080ff',
+              fillOpacity: 0.20
+            });
+            PolygonSet.setMap(map);
+            //pop-up info window 
+        }
+
+        
+        function toggleHeatMap(){
+            var script = document.createElement('script');
+            script.src = '/GeoJSON/HeatMapSpot.js';
+            document.getElementsByTagName('head')[0].appendChild(script);
+        }
+
+        window.heatmap_callback = function(results){
+          var heatMapData=[];
+          for (var i = 1; i < results.features.length; i++) {
+                var coords = results.features[i].geometry.coordinates;
+                var FeatureCount=results.features[i].properties.count;
+                var latLng = new google.maps.LatLng(coords[1],coords[0]);
+                heatMapData[i-1]={location: latLng, weight: FeatureCount/100};
+              }
+            map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 22,
+            center: {lat: 24.303017, lng: 120.654451},
+            mapTypeId: 'satellite'
+            });
+            
+
+            var heatmap = new google.maps.visualization.HeatmapLayer({
+                data: heatMapData
+            });
+            heatmap.setMap(map);
+        }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyADO6hLM2rgSk6N3v6nJyeNpepvvxClT8k&libraries=visualization&callback=initMap">
+    </script>
+  </body>
+</html>
